@@ -1,2 +1,5 @@
 content/
 __pycache__/
+dermamarker-v2/
+test.py
+config.py
