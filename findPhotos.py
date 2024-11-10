@@ -4,7 +4,7 @@ def execute():
     from tensorflow.keras.preprocessing import image
     from tensorflow.keras.applications.imagenet_utils import decode_predictions, preprocess_input
     from tensorflow.keras.models import Model
-    import time
+    import awsHelper
 
     model = tensorflow.keras.applications.vgg16.VGG16(weights='imagenet', include_top=True)
     import sklearn.metrics
@@ -31,10 +31,10 @@ def execute():
         print(idx_closest)
         return idx_closest
 
-    def get_concatenated_images(indexes, thumb_height):
+    def get_concatenated_images(idx_closest_paths, thumb_height):
         thumbs = []
-        for idx in indexes:
-            img = image.load_img(images[idx])
+        for idx in idx_closest_paths:
+            img = image.load_img(idx)
             img = img.resize((int(img.width * thumb_height / img.height), thumb_height))
             thumbs.append(img)
         concat_image = np.concatenate([np.asarray(t) for t in thumbs], axis=1)
@@ -46,8 +46,6 @@ def execute():
 
     with open('content/features_images_short.p', 'rb') as pickle_file:
         images, pca_features, pca = pk.load(pickle_file)
-        # do a query on a random image
-        # query_image_idx = int(len(images) * random.random())
 
         imagetime = []
         for i in os.listdir("static/files"):
@@ -66,23 +64,13 @@ def execute():
         new_pca_features = pca.transform(new_features)[0]
         distances = [distance.cosine(new_pca_features, feat) for feat in pca_features]
         idx_closest = sorted(range(len(distances)), key=lambda k: distances[k])[0:20]  # grab 20 occurrences
-        results_image = get_concatenated_images(idx_closest[0:5], 200) # grab 5 photos
 
-        # idx_closest = get_closest_images(query_image_idx)
-        # print(idx_closest)
-        # query_image = get_concatenated_images([query_image_idx], 300)
-        # results_image = get_concatenated_images(idx_closest, 200)
-
-        # display the query image
-        #plt.figure(figsize=(5, 5))
-        #plt.imshow(new_image)
-        #plt.title("query image (%d)")
-        # plt.title("query image (%d)" % query_image_idx)
-
-        # display the resulting images
-        #plt.figure(figsize=(16, 12))
-        #plt.imshow(results_image)
-        #plt.title("result images")
+        # AWS s3
+        idx_closest_paths = [images[idx_closest[i]] for i in range(len(idx_closest))]
+        idx_closest_paths = [idx_closest_path[8:] for idx_closest_path in idx_closest_paths] #content/all_images_short/ISIC_0028968.jpg --> all_images_short/ISIC_0028968.jpg
+        downloaded_files = awsHelper.download_images_s3(idx_closest_paths[0:5]) # download 5 images from s3
+        results_image = get_concatenated_images(idx_closest_paths[0:5], 200) # grab 5 photos
+        awsHelper.delete_local_files(downloaded_files) # clear downloaded local images
 
         import pandas as pd
         df = pd.read_csv('content/HAM10000_metadata_short')
