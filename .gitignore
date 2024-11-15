@@ -4,3 +4,4 @@ dermamarker-v2/
 test.py
 config.py
 static/files/*
+.DS_Store
