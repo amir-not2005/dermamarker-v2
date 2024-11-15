@@ -6,10 +6,28 @@ def execute():
     from tensorflow.keras.models import Model
     import awsHelper
 
+    from PIL import Image
+    import base64
+    from io import BytesIO
+
     model = tensorflow.keras.applications.vgg16.VGG16(weights='imagenet', include_top=True)
     import sklearn.metrics
     import tensorflow
     import numpy as np
+
+    def encode_img1(image, im_type="JPEG"):
+            buffered = BytesIO()
+            image.save(buffered, format=im_type)
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            return img_str
+    
+    def encode_img(img):
+            pil_img = Image.fromarray(img)
+            buff = BytesIO()
+            pil_img.save(buff, format="JPEG")
+            results_image = base64.b64encode(buff.getvalue()).decode("utf-8")
+            return results_image
+
     def load_image(path):
         img = tensorflow.keras.utils.load_img(path, target_size=model.input_shape[1:3])
         x = image.img_to_array(img)
@@ -65,6 +83,10 @@ def execute():
         distances = [distance.cosine(new_pca_features, feat) for feat in pca_features]
         idx_closest = sorted(range(len(distances)), key=lambda k: distances[k])[0:20]  # grab 20 occurrences
 
+        if sorted(distances)[0] > 0.5:
+            return list([False, encode_img1(new_image)]) 
+
+
         # AWS s3
         idx_closest_paths = [images[idx_closest[i]] for i in range(len(idx_closest))]
         idx_closest_paths = [idx_closest_path[8:] for idx_closest_path in idx_closest_paths] #content/all_images_short/ISIC_0028968.jpg --> all_images_short/ISIC_0028968.jpg
@@ -112,28 +134,17 @@ def execute():
             stat = int(lesions_stat[i]) / len(lesion)
             lesion1_name.append(str(i))
 
-        from PIL import Image
-        import base64
-        from io import BytesIO
+        
 
 
-        def encode_img(img):
-            pil_img = Image.fromarray(img)
-            buff = BytesIO()
-            pil_img.save(buff, format="JPEG")
-            results_image = base64.b64encode(buff.getvalue()).decode("utf-8")
-            return results_image
+        
 
 
         for i in idx_closest:
             x = df['dx'].loc[df.index[i]]
             lesion.append(lesion_type_dict[x])
 
-        def encode_img1(image, im_type="JPEG"):
-            buffered = BytesIO()
-            image.save(buffered, format=im_type)
-            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-            return img_str
+        
 
 
     new_image = encode_img1(new_image)

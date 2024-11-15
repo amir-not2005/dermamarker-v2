@@ -63,7 +63,7 @@
     <div class="container-fluid fixed-top px-0 wow fadeIn" data-wow-delay="0.1s">
         <div class="top-bar text-white-50 row gx-0 align-items-center d-none d-lg-flex">
             <div class="col-lg-6 px-5 text-start">
-                <small class="ms-4"><i class="fa fa-envelope me-2"></i>ydyrysbayeva.t@nisa.edu.kz</small>
+                <small class="ms-4"><i class="fa fa-envelope me-2"></i>dermamarker@gmail.com</small>
             </div>
             <div class="col-lg-6 px-5 text-end">
                 <small>Follow us:</small>
@@ -131,7 +131,16 @@
     </fieldset>
   </form>
 </div>
-{% if x1 %}
+
+{% if irrelevantImage %}
+<div class="result">
+    <h2>Your Photo:</h2>
+    <img src="data:image/png;base64, {{x[1]}}" alt="" style="border-radius: 8px;">
+    <p style="color: black; grid-column: 1 / span 2; font-size: 20px">{{x1}}</p>
+</div>
+{% endif %}
+
+{% if x1 and not irrelevantImage %}
 <div class="result">
     <h2>Your Photo:</h2>
     <img src="data:image/png;base64, {{x[1]}}" alt="" style="border-radius: 8px;">
@@ -261,7 +270,7 @@
                     <h5 class="text-light mb-4">Address</h5>
                     <p><i class="fa fa-map-marker-alt me-3"></i>Astana, Kazakhstan</p>
                     <p><i class="fa fa-phone-alt me-3"></i>+7 747 333 91 40</p>
-                    <p><i class="fa fa-envelope me-3"></i>ydyrysbayeva.t@nisa.edu.kz</p>
+                    <p><i class="fa fa-envelope me-3"></i>dermamarker@gmail.com</p>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <h5 class="text-light mb-4">Last News</h5>
