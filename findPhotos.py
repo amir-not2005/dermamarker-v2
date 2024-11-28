@@ -2,16 +2,15 @@ def execute():
     import os
     import tensorflow.keras
     from tensorflow.keras.preprocessing import image
-    from tensorflow.keras.applications.imagenet_utils import decode_predictions, preprocess_input
+    from tensorflow.keras.applications.imagenet_utils import preprocess_input
     from tensorflow.keras.models import Model
-    import awsHelper
+    import helperFunctions.awsHelper as awsHelper
 
     from PIL import Image
     import base64
     from io import BytesIO
 
     model = tensorflow.keras.applications.vgg16.VGG16(weights='imagenet', include_top=True)
-    import sklearn.metrics
     import tensorflow
     import numpy as np
 
@@ -58,7 +57,6 @@ def execute():
         concat_image = np.concatenate([np.asarray(t) for t in thumbs], axis=1)
         return concat_image
 
-    import sklearn
     from sklearn.decomposition import PCA
     import pickle as pk
 
@@ -134,18 +132,9 @@ def execute():
             stat = int(lesions_stat[i]) / len(lesion)
             lesion1_name.append(str(i))
 
-        
-
-
-        
-
-
         for i in idx_closest:
             x = df['dx'].loc[df.index[i]]
             lesion.append(lesion_type_dict[x])
-
-        
-
 
     new_image = encode_img1(new_image)
     results_image = encode_img(results_image)

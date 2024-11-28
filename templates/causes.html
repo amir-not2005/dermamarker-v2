@@ -115,22 +115,93 @@
     </div>
     <!-- Page Header End -->
 
+    <!-- Analytics Start -->
 
-<div class="scanner">
-  <h1 class="temp">Scanner</h1>
-  <form method="post" enctype="multipart/form-data" id="uploadForm">
-    <fieldset class="form-fieldset">
-      <label class="form-label">
-        <span class="form-label-text">Choose a file:</span>
-        <input type="file" name="file" class="form-control-file" id="fileInput" required>
-      </label>
-      <button type="submit" class="btn btn-primary btn-lg btn-block mt-4" id="submitButton">Submit</button>
-      <div class="progress mt-4 mb-0" style="height: 5px; border-radius: 0;">
-        <div class="progress-bar" role="progressbar" style="width: 0;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-    </fieldset>
-  </form>
+<div class="container-xxl py-5">
+    <div class="container">
+    <div class="row justify-content-center">
+            <div class="col-lg-6 wow fadeIn" data-wow-delay="0.1s">
+                <h1 class="display-6 mb-5">Please, enter your data before submitting your image</h1>
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {{ form.hidden_tag() }}
+                    <div class="row g-3">
+                        <!-- User Data Fields -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" name="name" id="name" placeholder="Your Name" required>
+                                <label for="name">Your Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" name="email" class="form-control" id="email" placeholder="Your Email" required>
+                                <label for="email">Your Email</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" name="phone" id="phone" placeholder="Phone number: XXX-XXX-XXXX" required>
+                                <label for="phone_number">Phone number: +1 123 345 6789</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="age">Age</label>
+                            <input type="number" class="form-control" name="age" id="age" placeholder="Enter your age" min="0" max="110" required>
+                        </div>
+                    
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select class="form-select" name="gender" id="gender" required>
+                                <option value="" disabled selected>Select your gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="phone_number">How did you hear about us?</label>
+                            <select class="form-select" name="howKnow" id="howKnow" required>
+                                <option value="friends">Friends</option>
+                                <option value="socialNetworks">Social networks</option>
+                                <option value="webSearch">Web search</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" name="message" placeholder="Leave a message here" id="message" style="height: 100px"></textarea>
+                                <label for="message">We would appreciate any suggestions or recommendations from you!</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload Section -->
+                    <div class="scanner mt-4">
+                        <fieldset class="form-fieldset">
+                            <label class="form-label">
+                                <span class="form-label-text">Choose a file:</span>
+                                <input type="file" name="file" class="form-control-file" id="fileInput" required>
+                            </label>
+                        </fieldset>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-lg btn-block mt-4" id="submitButton">Submit</button>
+
+                        <!-- Progress Bar (Optional, to show file upload progress) -->
+                        <div class="progress mt-4 mb-0" style="height: 5px; border-radius: 0;">
+                            <div class="progress-bar" role="progressbar" style="width: 0;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+    </div>
 </div>
+</div>
+
+<!-- Analytics End -->
+
 
 {% if irrelevantImage %}
 <div class="result">
@@ -203,7 +274,7 @@
                     <div class="col-lg-6 wow fadeIn" data-wow-delay="0.1s">
                         <div class="d-inline-block rounded-pill bg-secondary text-primary py-1 px-3 mb-3">Contact Doctors</div>
                         <h1 class="display-6 mb-5">If You Want To Get Consultation, Contact Doctors - Telephone: {{dt}}</h1>
-                        <form method="POST" action="/save_form">
+                        <form method="POST">
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <div class="form-floating">
