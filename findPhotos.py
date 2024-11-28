@@ -37,7 +37,6 @@ def execute():
     feat_extractor = Model(inputs=model.input, outputs=model.get_layer("fc2").output)
     feat_extractor.summary()
 
-    import random
     from matplotlib import pyplot as plt
     from scipy.spatial import distance
 
