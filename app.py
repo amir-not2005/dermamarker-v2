@@ -63,15 +63,16 @@ YOUR_DOMAIN = 'http://128.189.85.60:4444'
 @app.route('/submit-data', methods=['POST'])
 def handle_submitted_data():
     combinedForm = CombinedForm()
-    
-    # Get image form data and save in session
-    file_form=combinedForm.file_form
-    form_file_id = os.urandom(12)
-    
-    session[form_file_id] = {"image": base64.b64encode(request.files["image"].read()).decode("utf-8")}
-    
-    
 
+    # Get image form data
+    file_form=combinedForm.file_form
+    file = file_form.file.data
+
+    # Save image as temp file in folder - folder will be cleared after scanner execution
+    upload_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
+    filename = secure_filename(os.urandom(12))
+    file_path = os.path.join(upload_folder, filename)
+    file.save(file_path)
     
     # Get analytics form data
     user_form = combinedForm.user_form
@@ -88,8 +89,9 @@ def handle_submitted_data():
     }
     save_analytics_db(form_data)
 
-@app.route('/create-checkout-session', methods=['POST'])
-def create_checkout_session():
+    return redirect(create_checkout_session(file_path))
+
+def create_checkout_session(file_path):
     try:
         checkout_session = stripe.checkout.Session.create(
             line_items=[
@@ -99,6 +101,7 @@ def create_checkout_session():
                     'quantity': 1,
                 },
             ],
+            metadata={"file_path": file_path},
             mode='payment',
             success_url=YOUR_DOMAIN + '/scanner',
             cancel_url=YOUR_DOMAIN + '/scanner',
@@ -162,10 +165,9 @@ def about():
 def feedback():
     return render_template('contact.html')
 
-@app.route('/scanner', methods=['GET', 'POST'])
+@app.route('/scanner')
 def causes():
-    combinedForm = CombinedForm()
-    file_form=combinedForm.file_form
+    file_path = request.args.get("file_path")
     x=[]
     irrelevantImage = ''
     x1 = ''
@@ -180,28 +182,11 @@ def causes():
     imt1 = ''
     dt = ''
     pm = ''
-    if combinedForm.validate_on_submit():
-        # Start scanner
-        if request.method == "POST":
-            file = file_form.file.data
-            # Check file's format (JPEG, JPG and PNG are acceptable) 
-            # !TODO: Might not be needed
-            file_extension = os.path.splitext(file.filename)[1]
-            if file_extension not in [".jpg", ".png", ".jpeg"]:
-                irrelevantImage = True
-                print("Image isn't JPEG or PNG")
-                x1 = "Please, upload JPEG or PNG file formats"
-                return render_template('causes.html', irrelevantImage=irrelevantImage, form=combinedForm, x=x, x1=x1, x2=x2,d1=d1,da1=da1,im1=im1,imp1=imp1,maxdt=maxdt,it1=it1,imt1=imt1,dt=dt,pm=pm)
 
-            # Save file locally 
-            upload_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(upload_folder, filename)
-            file.save(file_path)
+            # Start scanner
+            x = execute(userimage = file_path)
 
-            x = execute()
-
-            # Delete file locally
+            # Delete user uploaded file locally
             if os.path.exists(file_path):
                 os.remove(file_path)
 
