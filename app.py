@@ -1,3 +1,4 @@
+import requests
 import stripe
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from flask_wtf import FlaskForm
@@ -109,8 +110,8 @@ def create_checkout_session(file_path):
             ],
             metadata={"file_path": file_path},
             mode='payment',
-            success_url=url_for("causes", payment_status=True ,_external=True),
-            cancel_url=url_for("causes", payment_status=False ,_external=True),
+            success_url=url_for("causes", file_path=file_path, _external=True),
+            cancel_url=url_for("causes", file_path=file_path, _external=True),
             automatic_tax={'enabled': True},
         )
     except Exception as e:
@@ -130,6 +131,13 @@ def webhook():
     response = stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY)
     print(response)
 
+    # Send action to scanner
+    payload = {
+        'payment_status': response['success']
+    }
+    requests.post(DOMAIN+"/scanner", data=payload)
+
+
 
 @app.route('/about')
 def about():
@@ -139,22 +147,33 @@ def about():
 def feedback():
     return render_template('contact.html')
 
-@app.route('/scanner')
+@app.route('/scanner', methods=['GET', 'POST'])
 def causes():
     combinedForm = CombinedForm()
     file_path = request.args.get("file_path")
-    
-    # Start scanner
-    scan_results = execute(userimage = file_path)
+    payload = request.data
 
-    # Delete user uploaded file locally
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    scan_results = []
+    payment_message = "We use Stripe to process all payments!"
+
+    if request.method == "POST" and payload['payment_status']:
+        # Start scanner
+        scan_results = execute(userimage = file_path)
+
+        # Delete user uploaded file locally
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Payment message
+        payment_message = "Payment successful!"
+
+    if request.method == "POST" and not payload['payment_status']:
+        payment_message = "Unfortunately, payment was unsuccessful."
 
     # Render text based on results
     [irrelevantImage, x, x1, x2, d1, da1, im1, imp1, maxdt, it1, imt1, dt, pm] = render_text_scanner_page(scan_results)
     
-    return render_template('causes.html', irrelevantImage=irrelevantImage, form=combinedForm, x=x, x1=x1, x2=x2,d1=d1,da1=da1,im1=im1,imp1=imp1,maxdt=maxdt,it1=it1,imt1=imt1,dt=dt,pm=pm)
+    return render_template('causes.html', irrelevantImage=irrelevantImage, form=combinedForm, x=x, x1=x1, x2=x2,d1=d1,da1=da1,im1=im1,imp1=imp1,maxdt=maxdt,it1=it1,imt1=imt1,dt=dt,pm=pm, payment_message=payment_message)
 
 @app.route('/save_form', methods=['POST'])
 def save_form():
