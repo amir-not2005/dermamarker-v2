@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+import stripe
+from flask import Flask, render_template, request, jsonify, redirect
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField, TextAreaField
 import os
@@ -7,9 +8,10 @@ from wtforms.validators import InputRequired, DataRequired, Regexp
 from wtforms import StringField, SubmitField, SelectField, IntegerField
 from findPhotos import execute
 from helperFunctions.dbHelper import save_contact_db, save_analytics_db
+from config import STRIPE_PUBLISHABLE, STRIPE_SECRET
+import json
 
 app = Flask(__name__)
-
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 # Upload size 10 MB
 
 # User data input
@@ -52,6 +54,77 @@ app.config['UPLOAD_FOLDER'] = 'static/files'
 @app.route("/")
 def index():
     return render_template('index.html')
+
+# Set your Stripe secret key
+stripe.api_key = STRIPE_SECRET
+
+YOUR_DOMAIN = 'http://128.189.85.60:4444'
+
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+                    'price': 'price_1QPyXYGADQ2qx7ZNbtMyxcHc',
+                    'quantity': 1,
+                },
+            ],
+            mode='payment',
+            success_url=YOUR_DOMAIN + '/scanner',
+            cancel_url=YOUR_DOMAIN + '/scanner',
+            automatic_tax={'enabled': True},
+        )
+    except Exception as e:
+        return str(e)
+
+    return redirect(checkout_session.url, code=303)
+
+
+
+endpoint_secret = 'whsec_5c0234c845ef02e64551f82d33dd4c22c4e3b1908dd83b0b892752c86a6def4c'  # Replace with your actual endpoint secret
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    print("WEBHOOK RECEIVED")
+
+    # Retrieve the payload and the signature header
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+
+    # Verify the signature first
+    try:
+        # Construct the event using the payload and signature
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except ValueError as e:
+        # Invalid payload
+        print(f"⚠️  Invalid payload: {e}")
+        return jsonify(success=False), 400
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        print(f"⚠️  Webhook signature verification failed: {e}")
+        return jsonify(success=False), 400
+
+    # Handle the event based on its type
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']  # Contains a stripe.PaymentIntent
+        print(f"Payment for {payment_intent['amount']} succeeded")
+        # Then define and call a method to handle the successful payment intent.
+        # handle_payment_intent_succeeded(payment_intent)
+    elif event['type'] == 'payment_method.attached':
+        payment_method = event['data']['object']  # Contains a stripe.PaymentMethod
+        print(f"Payment method {payment_method['id']} attached successfully.")
+        # Then define and call a method to handle the successful attachment of a PaymentMethod.
+        # handle_payment_method_attached(payment_method)
+    else:
+        # Unexpected event type
+        print(f"⚠️  Unhandled event type: {event['type']}")
+
+    # Return a success response
+    return jsonify(success=True), 200
+
+
 
 @app.route('/about')
 def about():
@@ -232,5 +305,6 @@ def save_form():
 
     
 
-if __name__ == '__main__':
-    app.run(host="0.0.0.0")
+if __name__=="__main__":
+    app.run(host=os.getenv('IP', '0.0.0.0'), 
+            port=int(os.getenv('PORT', 4444)))
