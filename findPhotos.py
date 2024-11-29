@@ -4,7 +4,7 @@ def execute(userimage):
     from tensorflow.keras.preprocessing import image
     from tensorflow.keras.applications.imagenet_utils import preprocess_input
     from tensorflow.keras.models import Model
-    import helperFunctions.awsHelper as awsHelper
+    import helperFunctions.awsHandler as awsHandler
 
     from PIL import Image
     import base64
@@ -75,9 +75,9 @@ def execute(userimage):
         # AWS s3
         idx_closest_paths = [images[idx_closest[i]] for i in range(len(idx_closest))]
         idx_closest_paths = [idx_closest_path[8:] for idx_closest_path in idx_closest_paths] #content/all_images_short/ISIC_0028968.jpg --> all_images_short/ISIC_0028968.jpg
-        downloaded_files = awsHelper.download_images_s3(idx_closest_paths[0:5]) # download 5 images from s3
+        downloaded_files = awsHandler.download_images_s3(idx_closest_paths[0:5]) # download 5 images from s3
         results_image = get_concatenated_images(idx_closest_paths[0:5], 200) # grab 5 photos
-        awsHelper.delete_local_files(downloaded_files) # clear downloaded local images
+        awsHandler.delete_local_files(downloaded_files) # clear downloaded local images
 
         import pandas as pd
         df = pd.read_csv('content/HAM10000_metadata_short')
