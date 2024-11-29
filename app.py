@@ -1,5 +1,5 @@
 import stripe
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, render_template, request, jsonify, redirect, session
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField, TextAreaField
 import os
@@ -9,7 +9,7 @@ from wtforms import StringField, SubmitField, SelectField, IntegerField
 from findPhotos import execute
 from helperFunctions.dbHelper import save_contact_db, save_analytics_db
 from config import STRIPE_PUBLISHABLE, STRIPE_SECRET
-import json
+import base64
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 # Upload size 10 MB
@@ -59,6 +59,34 @@ def index():
 stripe.api_key = STRIPE_SECRET
 
 YOUR_DOMAIN = 'http://128.189.85.60:4444'
+
+@app.route('/submit-data', methods=['POST'])
+def handle_submitted_data():
+    combinedForm = CombinedForm()
+    
+    # Get image form data and save in session
+    file_form=combinedForm.file_form
+    form_file_id = os.urandom(12)
+    
+    session[form_file_id] = {"image": base64.b64encode(request.files["image"].read()).decode("utf-8")}
+    
+    
+
+    
+    # Get analytics form data
+    user_form = combinedForm.user_form
+
+    # Store user data in the db
+    form_data = {
+        "name" : user_form.name.data,
+        "email" : user_form.email.data,
+        "phone" : user_form.phone.data,
+        "age" : user_form.age.data,
+        "gender" : user_form.gender.data,
+        "howKnow" : user_form.howKnow.data,
+        "message" : user_form.message.data
+    }
+    save_analytics_db(form_data)
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -153,27 +181,11 @@ def causes():
     dt = ''
     pm = ''
     if combinedForm.validate_on_submit():
-        
-        # Get analytics form data
-        user_form = combinedForm.user_form
-
-
-        # Store user data in the db
-        form_data = {
-            "name" : user_form.name.data,
-            "email" : user_form.email.data,
-            "phone" : user_form.phone.data,
-            "age" : user_form.age.data,
-            "gender" : user_form.gender.data,
-            "howKnow" : user_form.howKnow.data,
-            "message" : user_form.message.data
-        }
-        save_analytics_db(form_data)
-        
         # Start scanner
         if request.method == "POST":
             file = file_form.file.data
-            # Check file's format (JPEG, JPG and PNG are acceptable)
+            # Check file's format (JPEG, JPG and PNG are acceptable) 
+            # !TODO: Might not be needed
             file_extension = os.path.splitext(file.filename)[1]
             if file_extension not in [".jpg", ".png", ".jpeg"]:
                 irrelevantImage = True

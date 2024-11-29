@@ -1,4 +1,4 @@
-def execute():
+def execute(userimage):
     import os
     import tensorflow.keras
     from tensorflow.keras.preprocessing import image
@@ -61,18 +61,6 @@ def execute():
 
     with open('content/features_images_short.p', 'rb') as pickle_file:
         images, pca_features, pca = pk.load(pickle_file)
-
-        imagetime = []
-        for i in os.listdir("static/files"):
-            imagetime.append(os.path.getmtime("static/files/"+str(i)))
-        imagetime.sort()
-
-        for i in range(len(imagetime)):
-            if imagetime[-1] == os.path.getmtime("static/files/"+str(os.listdir("static/files")[i])):
-                userimage = "static/files/"+str(os.listdir("static/files")[i])
-            else: continue
-
-
         new_image, x = load_image(userimage)
 
         new_features = feat_extractor.predict(x)
