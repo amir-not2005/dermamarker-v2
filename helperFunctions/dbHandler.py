@@ -1,4 +1,39 @@
 import sqlite3
+import json
+
+def retrieve_payment_by_filename(filename):
+    # Connect to your SQLite database
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT payment FROM payments WHERE file_path = ?
+    ''', (filename,))
+
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        return result[0]
+    else:
+        return None
+
+def save_payments_db(session_id, file_path, user_data, payment):
+
+    if isinstance(user_data, dict):
+        user_data = json.dumps(user_data)  
+
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Insert data into the payments table
+    cursor.execute('''
+        INSERT INTO payments (session_id, file_path, user_data, payment)
+        VALUES (?, ?, ?, ?)
+    ''', (session_id, file_path, user_data, payment))
+
+    conn.commit()
+    conn.close()
 
 def save_contact_db(form_data):
     """Save contact form data to the database."""

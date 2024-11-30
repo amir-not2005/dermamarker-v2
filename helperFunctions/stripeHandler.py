@@ -11,8 +11,8 @@ def stripe_create_checkout_session(filename):
                 },
             ],
             mode='payment',
-            success_url=url_for("causes", _external=True),
-            cancel_url=url_for("causes", _external=True),
+            success_url=url_for("causes", q=filename, _external=True),
+            cancel_url=url_for("causes", q=filename, _external=True),
             automatic_tax={'enabled': True},
             metadata={'filename':filename}
         )
@@ -43,6 +43,7 @@ def stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY):
         print("checkout.session.completed", session)
         filename = session['metadata']['filename']
         print('Webhook filename', filename)
-
+        user_id = session['id']
+        customer_details = session['customer_details']
     # Return a success response
-    return jsonify(success=True, filename=filename), 200
+    return jsonify(success=True, filename=filename, user_id=user_id, customer_details=customer_details), 200

@@ -11,7 +11,7 @@ from wtforms import StringField, SubmitField, SelectField, IntegerField
 from findPhotos import execute
 from helperFunctions.renderTextScanner import render_text_scanner_page
 from helperFunctions.stripeHandler import stripe_create_checkout_session, stripe_payment_status_webhook
-from helperFunctions.dbHandler import save_contact_db, save_analytics_db
+from helperFunctions.dbHandler import retrieve_payment_by_filename, save_contact_db, save_analytics_db, save_payments_db
 from config import DOMAIN, STRIPE_PUBLISHABLE, STRIPE_SECRET, STRIPE_ENDPOINT_KEY
 import base64
 import urllib.parse
@@ -117,17 +117,19 @@ def webhook():
     # Run webhook logic
     response = stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY)
     response_json = response[0].json
-    print("RESPONSE_JSON:", response_json)
-
-    # Send action to scanner
-    payload = {
-        'payment_status': response_json['success'],
-        'filename': response_json['filename']
+    response_status = response[1]
     
-    }
-    response = requests.post(DOMAIN+"/scanner", json=payload)
+    filename = response_json['filename']
+    payment_status = response_json['success']
+    customer_details = response_json['customer_details']
+    user_id = response_json['user_id']
 
-    return {"status_code": response.status_code}
+    print(user_id, filename, customer_details, payment_status)
+
+    # Save payment to the database
+    save_payments_db(user_id, filename, customer_details, payment_status)
+
+    return {"status_code": response_status}
 
 @app.route('/about')
 def about():
@@ -143,13 +145,15 @@ def causes():
     scan_results = []
     payment_message = "We use Stripe to process all payments!"
 
-    if request.method == "POST":
-        payload = request.get_json()
-        print("JSON PAYLOAD", payload)
-        file_path = str("static/files/"+payload.get('filename'))
-        print("POST FILE PATH:", file_path)
+    filename = request.args.get('q', None)
+    
+    if filename:
+        file_path = str("static/files/"+filename)
+        print("SCANNER FILE PATH:", file_path)
 
-        if payload['payment_status']:
+        payment = retrieve_payment_by_filename(filename)
+
+        if payment: 
             # Start scanner
             scan_results = execute(userimage = file_path)
             print("SCANNER FLASK", scan_results)
@@ -160,10 +164,7 @@ def causes():
             # Payment message
             payment_message = "Payment successful!"
         
-            # Render text based on results
-            [irrelevantImage, x, x1, x2, d1, da1, im1, imp1, maxdt, it1, imt1, dt, pm] = render_text_scanner_page(scan_results)
-            
-        if not payload['payment_status']:
+        if not payment:
             payment_message = "Unfortunately, payment was unsuccessful."
 
     # Render text based on results
