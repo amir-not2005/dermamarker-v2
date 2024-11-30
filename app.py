@@ -1,3 +1,4 @@
+import json
 import requests
 import stripe
 from flask import Flask, render_template, request, jsonify, redirect, session, url_for
@@ -9,10 +10,11 @@ from wtforms.validators import InputRequired, DataRequired, Regexp
 from wtforms import StringField, SubmitField, SelectField, IntegerField
 from findPhotos import execute
 from helperFunctions.renderTextScanner import render_text_scanner_page
-from helperFunctions.stripeWebhook import stripe_payment_status_webhook
+from helperFunctions.stripeHandler import stripe_create_checkout_session, stripe_payment_status_webhook
 from helperFunctions.dbHandler import save_contact_db, save_analytics_db
 from config import DOMAIN, STRIPE_PUBLISHABLE, STRIPE_SECRET, STRIPE_ENDPOINT_KEY
 import base64
+import urllib.parse
 
 app = Flask(__name__)
 
@@ -96,28 +98,12 @@ def handle_submitted_data():
     }
     save_analytics_db(form_data)
 
-    return redirect(create_checkout_session(file_path))
+    # Create stripe checkout session
+    stripe_checkout_session = stripe_create_checkout_session(metadata = file_path)
+    
+    # Redirect to stripe payment window
+    return redirect(stripe_checkout_session.url, code=303)
 
-def create_checkout_session(file_path):
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            line_items=[
-                {
-                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-                    'price': 'price_1QPyXYGADQ2qx7ZNbtMyxcHc',
-                    'quantity': 1,
-                },
-            ],
-            metadata={"file_path": file_path},
-            mode='payment',
-            success_url=url_for("causes", file_path=file_path, _external=True),
-            cancel_url=url_for("causes", file_path=file_path, _external=True),
-            automatic_tax={'enabled': True},
-        )
-    except Exception as e:
-        return str(e)
-
-    return redirect(checkout_session.url, code=303)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -126,16 +112,22 @@ def webhook():
     # Retrieve the payload and the signature header
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
-
+    print("WEBHOOK PAYLOAD", payload)
     # Run webhook logic
     response = stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY)
-    print(response)
-
+    response_json = response[0].json
+    print("RESPONSE_JSON:", response_json)
     # Send action to scanner
+    
     payload = {
-        'payment_status': response['success']
-    }
-    requests.post(DOMAIN+"/scanner", data=payload)
+    'payment_status': response_json['success'],
+    'file_path': response_json['metadata']['file_path'],
+}
+    print("SENDING PAYLOAD:", payload)
+    response = requests.post(DOMAIN+"/scanner", json=payload)
+
+    return {"status_code": response.status_code}
+
 
 
 
@@ -150,25 +142,28 @@ def feedback():
 @app.route('/scanner', methods=['GET', 'POST'])
 def causes():
     combinedForm = CombinedForm()
-    file_path = request.args.get("file_path")
-    payload = request.data
-
     scan_results = []
     payment_message = "We use Stripe to process all payments!"
 
-    if request.method == "POST" and payload['payment_status']:
-        # Start scanner
-        scan_results = execute(userimage = file_path)
+    if request.method == "POST":
+        payload = request.get_json()
+        print("JSON PAYLOAD", payload)
+        file_path = payload.get('file_path')
+        print("POST FILE PATH:", file_path)
 
-        # Delete user uploaded file locally
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        
-        # Payment message
-        payment_message = "Payment successful!"
+        if payload['payment_status']:
+            # Start scanner
+            scan_results = execute(userimage = file_path)
 
-    if request.method == "POST" and not payload['payment_status']:
-        payment_message = "Unfortunately, payment was unsuccessful."
+            # Delete user uploaded file locally
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            
+            # Payment message
+            payment_message = "Payment successful!"
+
+        if not payload['payment_status']:
+            payment_message = "Unfortunately, payment was unsuccessful."
 
     # Render text based on results
     [irrelevantImage, x, x1, x2, d1, da1, im1, imp1, maxdt, it1, imt1, dt, pm] = render_text_scanner_page(scan_results)

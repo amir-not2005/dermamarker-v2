@@ -13,6 +13,8 @@ def render_text_scanner_page(scan_results):
     imt1 = ''
     dt = ''
     pm = ''
+    if x == []:
+        return irrelevantImage, x, x1, x2, d1, da1, im1, imp1, maxdt, it1, imt1, dt, pm
     if x[0] == False:
         irrelevantImage = True
         print("Can't Indentify image properly")
