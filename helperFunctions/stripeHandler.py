@@ -1,29 +1,31 @@
 from flask import jsonify, url_for
 import stripe
 
-def stripe_create_checkout_session(metadata):
+def stripe_create_checkout_session(filename):
     try:
         checkout_session = stripe.checkout.Session.create(
             line_items=[
                 {
-                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
                     'price': 'price_1QPyXYGADQ2qx7ZNbtMyxcHc',
                     'quantity': 1,
                 },
             ],
-            metadata={"file_path": metadata},
             mode='payment',
-            success_url=url_for("causes", file_path = metadata, _external=True),
-            cancel_url=url_for("causes", file_path = metadata, _external=True),
+            success_url=url_for("causes", _external=True),
+            cancel_url=url_for("causes", _external=True),
             automatic_tax={'enabled': True},
+            metadata={'filename':filename}
         )
     except Exception as e:
         return str(e)
     
-    print("CHECKOUT SESSION:",checkout_session)
+    print("CHECKOUT BEFORE PURCHASE SESSION:",checkout_session)
     return checkout_session
 
 def stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY):
+
+    filename = ''
+
     # Verify the signature first
     try:
         # Construct the event using the payload and signature
@@ -35,6 +37,12 @@ def stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY):
         # Invalid signature
         return jsonify(success=False, error=e), 400
 
+    # Successful payment
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object'] # contains a stripe.checkout.Session
+        print("checkout.session.completed", session)
+        filename = session['metadata']['filename']
+        print('Webhook filename', filename)
+
     # Return a success response
-    print("WEBHOOK EVENT:", event)
-    return jsonify(success=True, event=event['type']), 200
+    return jsonify(success=True, filename=filename), 200

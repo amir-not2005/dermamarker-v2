@@ -99,7 +99,7 @@ def handle_submitted_data():
     save_analytics_db(form_data)
 
     # Create stripe checkout session
-    stripe_checkout_session = stripe_create_checkout_session(metadata = file_path)
+    stripe_checkout_session = stripe_create_checkout_session(filename)
     
     # Redirect to stripe payment window
     return redirect(stripe_checkout_session.url, code=303)
@@ -113,23 +113,21 @@ def webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
     print("WEBHOOK PAYLOAD", payload)
+
     # Run webhook logic
     response = stripe_payment_status_webhook(payload, sig_header, STRIPE_ENDPOINT_KEY)
     response_json = response[0].json
     print("RESPONSE_JSON:", response_json)
+
     # Send action to scanner
-    
     payload = {
-    'payment_status': response_json['success'],
-    'file_path': response_json['metadata']['file_path'],
-}
-    print("SENDING PAYLOAD:", payload)
+        'payment_status': response_json['success'],
+        'filename': response_json['filename']
+    
+    }
     response = requests.post(DOMAIN+"/scanner", json=payload)
 
     return {"status_code": response.status_code}
-
-
-
 
 @app.route('/about')
 def about():
@@ -148,20 +146,23 @@ def causes():
     if request.method == "POST":
         payload = request.get_json()
         print("JSON PAYLOAD", payload)
-        file_path = payload.get('file_path')
+        file_path = str("static/files/"+payload.get('filename'))
         print("POST FILE PATH:", file_path)
 
         if payload['payment_status']:
             # Start scanner
             scan_results = execute(userimage = file_path)
-
+            print("SCANNER FLASK", scan_results)
             # Delete user uploaded file locally
             if os.path.exists(file_path):
                 os.remove(file_path)
             
             # Payment message
             payment_message = "Payment successful!"
-
+        
+            # Render text based on results
+            [irrelevantImage, x, x1, x2, d1, da1, im1, imp1, maxdt, it1, imt1, dt, pm] = render_text_scanner_page(scan_results)
+            
         if not payload['payment_status']:
             payment_message = "Unfortunately, payment was unsuccessful."
 
