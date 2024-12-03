@@ -15,7 +15,7 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 # Upload size 10 MB
 # User data input
 class UserDataForm(FlaskForm):
     name = StringField('Your Name', validators=[DataRequired()], render_kw={"placeholder": "Your Name"})
-    email = StringField('Your Email', validators=[DataRequired()], render_kw={"placeholder": "Your Email"})
+    country = StringField('Country', validators=[DataRequired()])
     phone = StringField('Phone Number', 
                         validators=[Regexp(r'^\+?\d{1,4}?[\s.-]?\(?\d{1,3}?\)?[\s.-]?\d{1,4}[\s.-]?\d{1,4}[\s.-]?\d{1,9}$', 
                                           message="Phone number must include a country code (e.g., +1, +44) and follow a valid format.")])
@@ -24,8 +24,11 @@ class UserDataForm(FlaskForm):
                          validators=[DataRequired()])
     howKnow = SelectField('How did you hear about us?', 
                           choices=[('friends', 'Friends'), 
-                                   ('socialNetworks', 'Social Networks'), 
-                                   ('webSearch', 'Web Search'), ("other", "Other")],
+                                   ('reddit', 'Reddit'), 
+                                   ('whatsapp', 'Whatsapp'), 
+                                   ('telegram', 'Telegram'), 
+                                   ('webSearch', 'Web Search'), 
+                                   ("other", "Other")],
                           validators=[DataRequired()])
     message = TextAreaField('Message', render_kw={"placeholder": "Leave a message here"})
 
@@ -88,7 +91,7 @@ def causes():
         # Store user data in the db
         form_data = {
             "name" : user_form.name.data,
-            "email" : user_form.email.data,
+            "country" : user_form.country.data,
             "phone" : user_form.phone.data,
             "age" : user_form.age.data,
             "gender" : user_form.gender.data,
@@ -159,57 +162,66 @@ def causes():
                 if "Benign keratosis-like lesions" in str(maxdt):
                     analysis1 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Benign keratosis-like lesions. These lesions are non-cancerous growths that appear as small, rough patches on the skin. While they are not typically harmful, they can cause discomfort or become unsightly. To treat benign keratosis-like lesions, there are several options available. One of the most effective treatments is cryotherapy, which involves freezing the lesions with liquid nitrogen. This causes the lesions to blister and eventually fall off, leaving clear skin underneath. Another option is topical creams containing retinoids or alpha-hydroxy acids, which help to exfoliate the affected areas and encourage the growth of new skin cells. It is important to note that while benign keratosis-like lesions are usually harmless, there is a small chance that they could develop into skin cancer if left untreated. Therefore, it is recommended to monitor any changes in the size, shape, or color of the lesions and to seek medical attention if any suspicious changes occur. In addition to treatment, it is also important to protect your skin from further damage by wearing sunscreen and avoiding excessive sun exposure. "
                     d1 = "Benign keratosis-like lesions: " + str(analysis1)
-                    imp1 = "Alex"
+                    imp1 = ""
                     im1 = "https://hips.hearstapps.com/hmg-prod/images/portrait-of-a-happy-young-doctor-in-his-clinic-royalty-free-image-1661432441.jpg?crop=0.66698xw:1xh;center,top&resize=1200:*"
                     it1 = "https://medsurgeindia.com/wp-content/w3-webp/uploads/2020/04/Cataract-Surgery.jpgw3.webp"
                     imt1 = "Laser surgery"
-                    dt = "+77718885212"
-                    pm = "500$"
+                    dt = "+77477806837"
+                    pm = ""
                 elif "dermatofibroma" in str(maxdt):
                     analysis2 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Dermatofibroma. It is a common benign skin growth characterized by a firm, raised lesion that typically appears on the extremities. Its exact cause is not well understood, but it is believed to result from an inflammatory reaction or overgrowth of fibroblasts in the skin. Dermatofibromas are generally harmless and do not pose significant medical consequences, although they can occasionally cause itching or tenderness. Treatment is usually not necessary unless the lesion becomes symptomatic or there are concerns about its appearance. In such cases, options such as surgical excision, cryotherapy, laser therapy, corticosteroid injections, or observation may be considered. It is important to consult with a dermatologist for an accurate diagnosis and appropriate treatment recommendation."
                     d1 = "dermatofibroma: " + str(analysis2)
-                    imp1 = "Elan"
+                    imp1 = ""
                     im1 = "https://turnkeymate.com/wp-content/uploads/2020/05/image-result-for-doctor-office-advertising.jpg"
                     it1 = "https://www.medicaldevice-network.com/wp-content/uploads/sites/23/2021/02/shutterstock_544348294-1.jpg"
                     imt1 = "Medicines against dermatofibroma"
-                    dt = "+77718885212"
-                    pm = "500$"
+                    dt = "+77477806837"
+                    pm = ""
                 elif "Melanocytic nevi" in str(maxdt):
                     analysis3 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Melanocytic nevi. Melanocytic nevi, commonly known as moles, are benign skin growths that occur when melanocytes, the cells responsible for producing pigment, cluster together. They can appear anywhere on the body and vary in size, shape, and color. The exact cause of melanocytic nevi is not fully understood, but they are generally thought to be a result of a combination of genetic predisposition and sun exposure. While most moles are harmless, they can sometimes undergo changes or become atypical, which may indicate a risk for skin cancer. Therefore, it is important to monitor moles for any changes in size, shape, or color and seek medical evaluation if any concerning features are observed. Treatment options for melanocytic nevi include surgical removal, especially if they are atypical or pose a cosmetic concern, and regular monitoring through dermatological examinations to ensure early detection of any potential abnormalities."
                     d1 = "Melanocytic nevi: " + str(analysis3)
-                    imp1 = "Michel"
+                    imp1 = ""
                     it1 = "https://insights.bukaty.com/hs-fs/hubfs/pills%20medication%20medicine.jpg?width=320&name=pills%20medication%20medicine.jpg"
                     imt1 = "Medicines against melanocytic nevi"
                     im1 = "https://cv-images.clickhole.com/originals/seudechqkp5jwupoiop3.jpg"
-                    dt = "+77718885212"
-                    pm = "500$"
+                    dt = "+77477806837"
+                    pm = ""
                 elif "Basal cell carcinoma" in str(maxdt):
                     analysis4 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Basal cell carcinoma. Basal cell carcinoma (BCC) is the most common type of skin cancer that originates in the basal cells, which are found in the deepest layer of the epidermis. It is primarily caused by prolonged exposure to ultraviolet (UV) radiation from the sun or artificial sources like tanning beds. Other risk factors include fair skin, a history of sunburns, a weakened immune system, and exposure to certain chemicals. If left untreated, BCC can grow larger and invade surrounding tissues, causing disfigurement and damage to nearby structures. However, BCC rarely spreads to other parts of the body or becomes life-threatening. Various medical treatments are available for BCC, depending on its size, location, and severity. These treatments may include surgical excision, Mohs surgery (a specialized technique to remove cancerous tissue layer by layer), cryotherapy (freezing the affected area), curettage and electrodesiccation (scraping and burning the tumor), radiation therapy, and topical medications like imiquimod or fluorouracil. Regular follow-ups and sun protection measures are crucial in managing BCC effectively."
                     d1 = "Basal cell carcinoma: " + str(analysis4)
-                    imp1 = "Danial"
+                    imp1 = ""
                     im1 = "https://www.topteny.com/wp-content/uploads/2015/02/doc6.jpg?x16372"
                     it1 = "https://financialtribune.com/sites/default/files/field/image/17january/12_medicines_2.jpg"
                     imt1 = "Medicines against basal cell carcinoma"
-                    dt = "+77718885212"
-                    pm = "500$"
+                    dt = "+77477806837"
+                    pm = ""
                 elif "Vascular lesions" in str(maxdt):
                     analysis5 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Vascular lesions. Vascular lesions are abnormalities in the blood vessels that can occur in various parts of the body. They can be classified into two main types: vascular malformations and vascular tumors. Vascular malformations are congenital abnormalities in the formation of blood vessels, while vascular tumors are abnormal growths of blood vessels. The exact causes of vascular lesions are not fully understood, but they are believed to result from genetic factors and developmental problems during embryogenesis. The consequences of vascular lesions can vary depending on their location and size, but they can lead to symptoms such as pain, swelling, bleeding, and functional impairment. Treatment options for vascular lesions depend on the specific type and characteristics of the lesion. They can range from conservative management, such as observation and symptomatic relief, to more invasive interventions, including embolization, sclerotherapy, laser therapy, or surgical removal. The choice of treatment is individualized based on the your condition, the severity of symptoms, and the potential risks and benefits of each approach. Therefore, it is essential for you with vascular lesions to consult with a medical professional to determine the most appropriate treatment plan for their specific case."
                     d1 = "Vascular lesions: " + str(analysis5)
-                    imp1 = "Alisher"
+                    imp1 = ""
                     im1 = "https://mayfairmortgages.com/wp-content/uploads/2016/10/0002_Best-doctors-3.jpg"
                     it1 = "https://ksunite.com/pharma/pharma2.jpg"
                     imt1 = "Medicines against vascular lesions"
-                    dt = "+77718885212"
-                    pm = "500$"
+                    dt = "+77477806837"
+                    pm = ""
                 elif "Actinic keratoses" in str(maxdt):
                     analysis6 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Actinic keratoses. Actinic keratoses (AK) are rough, scaly patches that develop on the skin due to prolonged exposure to ultraviolet (UV) radiation, typically from the sun. They are considered precancerous lesions and can progress to squamous cell carcinoma if left untreated. The consequences of actinic keratoses include an increased risk of skin cancer, discomfort, and cosmetic concerns. Medical treatments for actinic keratoses include topical medications like imiquimod, fluorouracil, and diclofenac, which help to eliminate the lesions. Other options include cryotherapy (freezing the lesions), curettage (scraping off the affected areas), photodynamic therapy (using light and a photosensitizing agent to destroy abnormal cells), and laser therapy. Treatment aims to remove the existing lesions, prevent further progression, and reduce the risk of skin cancer development. It's important to consult with a dermatologist to determine the most suitable treatment approach based on individual circumstances."
                     d1 = "Actinic keratoses: " + str(analysis6)
-                    imp1 = "Aibek"
-                    im1 = "https://www.westmauidoctors.com/wp-content/uploads/2015/11/bigstock-Happy-doctor-using-tablet-comp-50999882.jpg"
+                    imp1 = ""
+                    im1 = "https://easy-peasy.ai/cdn-cgi/image/quality=80,format=auto,width=700/https://fdczvxmwwjwpwbeeqcth.supabase.co/storage/v1/object/public/images/6431025c-ec6b-4006-b95b-7ef27c671bbb/71abcc42-af00-4416-b793-e1a924751685.png"
                     it1 = "https://www.cgdev.org/sites/default/files/ollendorf-rare-drug-pricing-adobe-stock.jpeg"
                     imt1 = "Medicines against actinic keratoses"
-                    dt = "+77718885212"
-                    pm = "500$"
+                    dt = "+77477806837"
+                    pm = ""
+                elif "Melanoma" in str(maxdt):
+                    analysis6 = "As a doctor, based on your symptoms and the appearance of the lesions, it is highly likely that you have Melanoma. Melanoma is a type of skin cancer that typically appears as a new mole or a change in an existing mole, often with irregular borders, uneven color, and an increase in size. It is the most serious form of skin cancer and can spread to other parts of the body if not detected early. Risk factors include a history of sunburns, excessive UV radiation exposure, having fair skin, and a family history of skin cancer. The consequences of melanoma can be severe, leading to metastasis, organ damage, and even death if not treated promptly. Medical treatments for melanoma depend on the stage and may include surgical removal of the lesion, immunotherapy, targeted therapy, radiation, and chemotherapy. Early detection and treatment are crucial to improving outcomes. It's important to consult with a dermatologist or oncologist for a thorough evaluation and to discuss the most appropriate treatment options based on your condition."
+                    d1 = "Melanoma: " + str(analysis6)
+                    imp1 = ""
+                    im1 = "https://easy-peasy.ai/cdn-cgi/image/quality=80,format=auto,width=700/https://fdczvxmwwjwpwbeeqcth.supabase.co/storage/v1/object/public/images/6431025c-ec6b-4006-b95b-7ef27c671bbb/71abcc42-af00-4416-b793-e1a924751685.png"
+                    it1 = "https://www.cgdev.org/sites/default/files/ollendorf-rare-drug-pricing-adobe-stock.jpeg"
+                    imt1 = "Medicines against Melanoma"
+                    dt = "+77477806837"
+                    pm = ""
 
 
                 x2 = str(result_f)
